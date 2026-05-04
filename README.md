@@ -1,8 +1,8 @@
 # Robot Learning — TU Berlin Summer 2026
 
-This repository implements Week 1 assignments from *Robot Learning* (Prof. Marc Toussaint & Wolfgang Hönig, TU Berlin), and **extends them with a self-initiated PPO vs. LQR robustness study** that goes well beyond the course requirements.
+A from-scratch implementation, simulation, and visualization of all Week 1 problems from *Robot Learning* (Prof. Marc Toussaint & Wolfgang Hönig, TU Berlin), plus a self-designed **PPO vs. LQR robustness study** on the Segway dynamics.
 
-> **What's beyond the assignment:** Sections 4–5 (`segway_env.py`, `04_train_segway_rl.py`, `05_evaluate_rl.py`, `diagnose.py`) are not part of the course homework. I built them to test whether reinforcement learning can match or exceed classical control on the same Segway dynamics derived in Problem 3 — a question the assignment doesn't address. The result is a 4-iteration debugging journey that reveals when (and when not) RL is the right tool.
+> **Scope of this project.** The course assignment only required **pen-and-paper derivations** (IK formulas, PD damping conditions, Euler-Lagrange equations of the Segway). I went well beyond that: **every problem is implemented in code**, with simulations, visualizations, and animations to validate the math against numerical results. I additionally designed and ran an end-to-end RL experiment (Sections 4–5) — comparing PPO against a Riccati-derived LQR controller under domain randomization — which is **not part of the course at all**.
 
 ## 🎬 Demos
 
@@ -11,27 +11,22 @@ This repository implements Week 1 assignments from *Robot Learning* (Prof. Marc 
 | L1 — Free fall (no control) | L2 — LQR balance | L3 — Position tracking |
 |:--:|:--:|:--:|
 | ![L1](segway_L1_freefall.gif) | ![L2](segway_L2_balance.gif) | ![L3](segway_L3_tracking.gif) |
-| Pendulum falls — verifies the unstable equilibrium | LQR recovers from 14° tilt to 0.03° | Wheel reaches `x=1m` while staying balanced (note: leans backward to accelerate) |
+| Pendulum falls — verifies the unstable equilibrium derived in Problem 3 | LQR recovers from 14° tilt to 0.03° | Wheel reaches `x=1m` while staying balanced (note: leans backward to accelerate) |
 
 ## 📋 Project Structure
 
-### Course Assignments (Week 1)
+All code below is self-written. The course handout only required mathematical derivations; the implementations and visualizations are an exercise in turning theory into working systems.
 
-| File | Description | Concepts |
+| File | What it does | Beyond-the-assignment work |
 |------|-------------|----------|
-| `01_inverse_kinematics.py` | Side-by-side soft (μ=0.5) vs. hard (μ→∞) constraint IK on dual Panda arms | Damped Least Squares, Woodbury identity |
-| `02_pd_control.py` | Three-damping comparison + time-constant analysis (matplotlib) | Critical damping, time constant τ |
-| `02_robot_simulation.py` | **Live PD control on real Panda joints** (under-damped vs. critical, dual robots) | Real-robot control, gain tuning |
-| `03_segway_lagrange.py` | Segway dynamics from Euler-Lagrange + LQR balance controller | Underactuated control, linearization, Riccati equation |
-
-### Self-Initiated Extension (RL vs. Classical Control)
-
-| File | Description | Concepts |
-|------|-------------|----------|
-| `segway_env.py` | Gymnasium wrapper for the Segway dynamics | RL environment standard |
-| `04_train_segway_rl.py` | PPO training with domain randomization (±100% physical params) | Sample-efficient RL, parallel envs |
-| `05_evaluate_rl.py` | Head-to-head evaluation: LQR vs. PPO across randomization levels | Robustness benchmarking |
-| `diagnose.py` | Per-trial diagnostic to identify *which* parameters cause PPO failures | Debug-driven engineering |
+| `01_inverse_kinematics.py` | Side-by-side soft (μ=0.5) vs. hard (μ→∞) constraint IK on dual Panda arms | Implementing the formulas from Problem 1, building the dual-arm visual comparison |
+| `02_pd_control.py` | Three-damping comparison + time-constant analysis (matplotlib) | Numerical validation of the analytical solutions; analytical and numerical curves overlap exactly |
+| `02_robot_simulation.py` | **Live PD control on real Panda joints** (under-damped vs. critical, dual robots) | Applying the homework derivations to a real 7-DOF arm |
+| `03_segway_lagrange.py` | Segway dynamics from Euler-Lagrange + LQR balance controller + 3-scenario animations | Going from M(q)q̈ on paper to a working, animated stabilization demo |
+| `segway_env.py` | Gymnasium wrapper for the Segway dynamics (**RL-extension only**) | Bridging classical dynamics to the modern RL toolchain |
+| `04_train_segway_rl.py` | PPO training with domain randomization (±100% physical params) (**RL-extension only**) | Full RL training pipeline with domain randomization |
+| `05_evaluate_rl.py` | Head-to-head evaluation: LQR vs. PPO across randomization levels (**RL-extension only**) | Quantitative robustness benchmark |
+| `diagnose.py` | Per-trial diagnostic to identify *which* parameters cause PPO failures (**RL-extension only**) | Custom debugging tool to dig past the headline failure rate |
 
 ## 📊 Key Results
 
@@ -39,21 +34,21 @@ This repository implements Week 1 assignments from *Robot Learning* (Prof. Marc 
 
 ![damping](pd_damping_comparison.png)
 
-The four curves correspond to different damping ratios ξ. The dashed black line is the analytical critical-damping solution `(1 + t/τ)·exp(-t/τ)` — perfectly overlapping the numerical green curve, validating the simulation against theory.
+The four curves correspond to different damping ratios ξ. The dashed black line is the analytical critical-damping solution `(1 + t/τ)·exp(-t/τ)` — perfectly overlapping the numerical green curve. **This is the kind of validation the homework didn't require, but I added it to confirm the math.**
 
 ### PD Control on a Real Panda Joint
 
 ![panda_pd](panda_pd_trajectory.png)
 
-The blue curve (under-damped, ξ=0.3) overshoots from −2 rad to **+0.74 rad** before oscillating back. The green curve (critically damped, ξ=1.0) converges monotonically — the textbook industrial-robot behavior.
+The blue curve (under-damped, ξ=0.3) overshoots from −2 rad to **+0.74 rad** before oscillating back. The green curve (critically damped, ξ=1.0) converges monotonically — the textbook industrial-robot behavior. Both are derived directly from the homework's PD analysis.
 
 ### Segway: Three-Scenario Summary
 
 ![segway_summary](segway_summary.png)
 
-Red (L1, no control) winds up to 360°. Green (L2, LQR) brings θ back to 0 within seconds. Blue (L3, tracking) walks smoothly to x=1m.
+Red (L1, no control) winds up to 360°. Green (L2, LQR) brings θ back to 0 within seconds. Blue (L3, tracking) walks smoothly to x=1m. The Euler-Lagrange equations from Problem 3 directly drive these simulations.
 
-### PPO vs. LQR Under Domain Randomization (Self-Initiated)
+### PPO vs. LQR Under Domain Randomization (Self-Initiated Research)
 
 ![rl](lqr_vs_ppo_comparison.png)
 
@@ -93,11 +88,11 @@ pip install stable-baselines3 gymnasium
 ## 🚀 Reproducing the Results
 
 ```bash
-# Course assignments
-python3 01_inverse_kinematics.py     # IK comparison
-python3 02_pd_control.py              # PD damping curves → 2 PNGs
-python3 02_robot_simulation.py        # Live PD on Panda
-python3 03_segway_lagrange.py         # Segway scenarios → 3 GIFs
+# Implementations of the homework problems
+python3 01_inverse_kinematics.py     # Problem 1 — IK
+python3 02_pd_control.py              # Problem 2 — PD damping curves → 2 PNGs
+python3 02_robot_simulation.py        # Problem 2 — Live PD on Panda
+python3 03_segway_lagrange.py         # Problem 3 — Segway scenarios → 3 GIFs
 
 # Self-initiated RL extension
 python3 04_train_segway_rl.py         # 5–10 min on GPU
